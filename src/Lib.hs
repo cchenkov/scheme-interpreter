@@ -20,14 +20,6 @@ data Expr = Var Ident
           | Apply Expr [Expr]
           deriving (Show)
 
-maybeAndThen :: Maybe a -> (a -> Maybe b) -> Maybe b
-maybeAndThen Nothing _ = Nothing
-maybeAndThen (Just x) f = f x
-
-ifNumberThen :: Value -> (Integer -> Maybe Value) -> Maybe Value
-ifNumberThen (Number n) f = f n
-ifNumberThen _ _ = Nothing
-
 lookup :: String -> Context -> Maybe Value 
 lookup _ [] = Nothing
 lookup x ((k, v) : r) 
