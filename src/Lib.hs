@@ -85,9 +85,14 @@ space  =  char ' '
 spaces :: Parser [Char]
 spaces = many space
 
+symbol :: Parser Char
+symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+
+letter :: Parser Char
+letter = oneOf $ ['A' .. 'Z'] ++ ['a' .. 'z']
+
 digit :: Parser Char
-digit = satisfy (`elem` ['0' .. '9'])
--- digit = foldl (<|>) (char '0') (map char ['1' .. '9'])
+digit = oneOf ['0' .. '9']
 
 nat :: Parser Integer
 nat = do
