@@ -97,13 +97,13 @@ digit = oneOf ['0' .. '9']
 nat :: Parser Integer
 nat = do
   n <- some digit
-  return $ read n
+  pure $ read n
 
 int :: Parser Integer
 int = do
   char '-'
   n <- nat
-  return (-n)
+  pure (-n)
   <|> nat
 
 nfloat :: Parser Float
@@ -111,14 +111,22 @@ nfloat = do
   x <- some digit
   char '.'
   y <- some digit
-  return $ read $ x ++ "." ++ y
+  pure $ read $ x ++ "." ++ y
 
 float :: Parser Float
 float = do
   char '-'
   n <- nfloat
-  return (-n)
+  pure (-n)
   <|> nfloat
+
+sepBy :: Parser a -> Parser sep -> Parser [a]
+sepBy px psep =
+  many $ do
+    x <- px
+    psep
+    pure x
+    <|> px
 
 lookup :: String -> Context -> Maybe Value 
 lookup _ [] = Nothing
