@@ -1,7 +1,7 @@
 module Lib where
 
 import Prelude hiding (lookup)
-import Data.Maybe
+import Control.Applicative (Alternative, empty, (<|>), many, some)
 
 type Ident = String
 
@@ -20,41 +20,100 @@ data Expr = Var Ident
           | Apply Expr [Expr]
           deriving (Show)
 
-type Parser a = String -> [(a, String)]
+newtype Parser a = Parser { runParser :: String -> Maybe (a, String) }
 
-bind :: Parser a -> (a -> Parser b) -> Parser b
-bind p f = \inp -> concat [f v rest | (v, rest) <- p inp]
+instance Functor Parser where
+  fmap f (Parser x) = Parser $ \s -> do
+    (x', s') <- x s
+    return (f x', s')
 
-result :: a -> Parser a
-result v = \inp -> [(v, inp)]
+instance Applicative Parser where
+  pure x = Parser $ \s -> Just (x, s)
 
-zero :: Parser a
-zero = \_ -> []
+  (Parser x) <*> (Parser y) = Parser $ \s -> do
+    (x', s')  <- x s
+    (y', s'') <- y s'
+    return (x' y', s'')
 
-item :: Parser Char
-item = 
-  \inp -> case inp of
-    [] -> []
-    (x:xs) -> [(x, xs)]
+instance Monad Parser where
+  (Parser x) >>= f = Parser $ \s -> do
+    (x', s') <- x s
+    runParser (f x') s'
 
-sat :: (Char -> Bool) -> Parser Char
-sat p = 
-  item `bind` \x ->
-    if p x
-      then result x
-      else zero
+instance MonadFail Parser where
+  fail _ = Parser $ \_ -> Nothing
+
+instance Alternative Parser where
+  empty = fail ""
+
+  (Parser x) <|> (Parser y) = Parser $ \s -> 
+    case x s of
+      Just v  -> Just v
+      Nothing -> y s
+
+next :: Parser Char
+next = Parser nextP
+  where
+    nextP []     = Nothing
+    nextP (x:xs) = Just (x, xs)
+
+satisfy :: (Char -> Bool) -> Parser Char
+satisfy p = do
+  x <- next
+  if p x
+    then pure x
+    else fail ""
+
+oneOf :: [Char] -> Parser Char
+oneOf xs = satisfy (`elem` xs)
+
+noneOf :: [Char] -> Parser Char
+noneOf xs = satisfy (`notElem` xs)
 
 char :: Char -> Parser Char
-char x = sat (\y -> x == y)
+char c = satisfy (== c)
+
+string :: String -> Parser String
+string = mapM char
+
+space :: Parser Char
+space  =  char ' '
+      <|> char '\n'
+      <|> char '\r'
+      <|> char '\t'
+
+spaces :: Parser [Char]
+spaces = many space
 
 digit :: Parser Char
-digit = sat (\x -> '0' <= x && x <= '9')
+digit = satisfy (`elem` ['0' .. '9'])
+-- digit = foldl (<|>) (char '0') (map char ['1' .. '9'])
 
-lower :: Parser Char
-lower = sat (\x -> 'a' <= x && x <= 'z')
+nat :: Parser Integer
+nat = do
+  n <- some digit
+  return $ read n
 
-upper :: Parser Char
-upper = sat (\x -> 'A' <= x && x <= 'Z')
+int :: Parser Integer
+int = do
+  char '-'
+  n <- nat
+  return (-n)
+  <|> nat
+
+nfloat :: Parser Float
+nfloat = do
+  x <- some digit
+  char '.'
+  y <- some digit
+  return $ read $ x ++ "." ++ y
+
+float :: Parser Float
+float = do
+  char '-'
+  n <- nfloat
+  return (-n)
+  <|> nfloat
 
 lookup :: String -> Context -> Maybe Value 
 lookup _ [] = Nothing
