@@ -8,11 +8,12 @@ type Ident = String
 type Context = [(Ident, Value)]
 
 data Value = Number Integer
+           | ListVal [Value]
            | Closure [Ident] Expr Context
-           deriving (Show)
 
 data Expr = Var Ident
           | Val Integer
+          | List [Expr]
           | Plus Expr Expr
           | Minus Expr Expr
           | If Expr Expr Expr
@@ -128,6 +129,12 @@ sepBy px psep =
     pure x
     <|> px
 
+parseVar :: Parser Expr
+parseVar = do
+  first <- letter <|> symbol
+  rest  <- many (letter <|> symbol <|> digit)
+  pure $ Var (first : rest)
+
 parseInt :: Parser Expr
 parseInt = do
   n <- int
@@ -159,6 +166,9 @@ ifcond _ _ _ = Nothing
 eval :: Context -> Expr -> Maybe Value 
 eval _   (Val n) = Just $ Number n
 eval ctx (Var i) = lookup i ctx
+eval ctx (List xs) = do
+  xs' <- mapM (eval ctx) xs
+  Just $ ListVal xs'
 eval ctx (Plus x y) = do
   x' <- eval ctx x
   y' <- eval ctx y
@@ -174,6 +184,13 @@ eval ctx (If cex tex eex) = do
   ifcond cex' tex' eex'
 eval ctx (Lambda is expr) = Just $ Closure is expr ctx
 eval ctx (Apply f xs) = do
-  mxs <- mapM (eval ctx) xs
+  xs' <- mapM (eval ctx) xs
   f'  <- eval ctx f
-  apply f' mxs
+  apply f' xs'
+
+showVal :: Value -> String
+showVal (Number n) = show n
+showVal (ListVal xs) = "(" ++ (unwords $ map showVal xs) ++ ")"
+showVal (Closure is _ _) = "(lambda (" ++ (unwords is) ++ ") ...)"
+
+instance Show Value where show = showVal
