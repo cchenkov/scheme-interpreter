@@ -43,7 +43,7 @@ instance Monad Parser where
     runParser (f x') s'
 
 instance MonadFail Parser where
-  fail _ = Parser $ \_ -> Nothing
+  fail _ = Parser $ const Nothing
 
 instance Alternative Parser where
   empty = fail ""
@@ -144,9 +144,7 @@ parseVar = do
   pure $ Var (first : rest)
 
 parseInt :: Parser Expr
-parseInt = do
-  n <- int
-  pure $ Val n
+parseInt = Val <$> int
 
 parseIf :: Parser Expr
 parseIf = do
@@ -167,14 +165,14 @@ parseCond = do
   char '('
   string "cond"
   spaces
-  cexs <- sepBy (parseExpr) spaces
+  cexs <- sepBy parseExpr spaces
   char ')'
   pure $ Cond cexs
 
 parseList :: Parser Expr
 parseList = do
   char '('
-  xs <- sepBy (parseExpr) spaces
+  xs <- sepBy parseExpr spaces
   char ')'
   pure $ List xs
 
@@ -196,11 +194,6 @@ minus :: Value -> Value -> Maybe Value
 minus (Number x) (Number y) = Just $ Number (x - y)
 minus _ _ = Nothing
 
-ifcond :: Value -> Value -> Value -> Maybe Value
-ifcond (Number 0) tex _ = Just $ tex
-ifcond (Number _) _ eex = Just $ eex
-ifcond _ _ _ = Nothing
-
 eval :: Context -> Expr -> Maybe Value 
 eval _   (Val n) = Just $ Number n
 eval ctx (Var i) = lookup i ctx
@@ -217,11 +210,11 @@ eval ctx (Minus x y) = do
   minus x' y'
 eval ctx (If cex tex eex) = do
   cex' <- eval ctx cex
-  tex' <- eval ctx tex
-  eex' <- eval ctx eex
-  ifcond cex' tex' eex'
+  case cex' of
+    Number 0 -> eval ctx tex
+    _        -> eval ctx eex
 eval _   (Cond []) = Nothing
-eval ctx (Cond [List [(Var "else"), tex]]) = eval ctx tex
+eval ctx (Cond [List [Var "else", tex]]) = eval ctx tex
 eval ctx (Cond (List [cex, tex] : rest)) = do
    cex' <- eval ctx cex
    case cex' of
@@ -236,7 +229,7 @@ eval ctx (Apply f xs) = do
 
 showValue :: Value -> String
 showValue (Number n) = show n
-showValue (ListVal xs) = "(" ++ (unwords $ map showValue xs) ++ ")"
-showValue (Closure ids _ _) = "(lambda (" ++ (unwords ids) ++ ") ...)"
+showValue (ListVal xs) = "(" ++ unwords (map showValue xs) ++ ")"
+showValue (Closure ids _ _) = "(lambda (" ++ unwords ids ++ ") ...)"
 
 instance Show Value where show = showValue
