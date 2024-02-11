@@ -128,6 +128,11 @@ sepBy px psep =
     pure x
     <|> px
 
+parseInt :: Parser Expr
+parseInt = do
+  n <- int
+  pure $ Val n
+
 lookup :: String -> Context -> Maybe Value 
 lookup _ [] = Nothing
 lookup x ((k, v) : r) 
@@ -146,27 +151,29 @@ minus :: Value -> Value -> Maybe Value
 minus (Number x) (Number y) = Just $ Number (x - y)
 minus _ _ = Nothing
 
-ifcond :: Value -> Maybe Value -> Maybe Value -> Maybe Value
-ifcond (Number 0) tex _ = tex
-ifcond (Number _) _ eex = eex
+ifcond :: Value -> Value -> Value -> Maybe Value
+ifcond (Number 0) tex _ = Just $ tex
+ifcond (Number _) _ eex = Just $ eex
 ifcond _ _ _ = Nothing
 
 eval :: Context -> Expr -> Maybe Value 
-eval _ (Val n) = Just $ Number n
+eval _   (Val n) = Just $ Number n
 eval ctx (Var i) = lookup i ctx
-eval ctx (Plus x y) = 
-  eval ctx x >>= \x' ->
-  eval ctx y >>= \y' ->
+eval ctx (Plus x y) = do
+  x' <- eval ctx x
+  y' <- eval ctx y
   plus x' y'
-eval ctx (Minus x y) = 
-  eval ctx x >>= \x' ->
-  eval ctx y >>= \y' ->
+eval ctx (Minus x y) = do
+  x' <- eval ctx x
+  y' <- eval ctx y
   minus x' y'
-eval ctx (If cex tex eex) =
-  eval ctx cex >>= \cex' ->
-  ifcond cex' (eval ctx tex) (eval ctx eex)
+eval ctx (If cex tex eex) = do
+  cex' <- eval ctx cex
+  tex' <- eval ctx tex
+  eex' <- eval ctx eex
+  ifcond cex' tex' eex'
 eval ctx (Lambda is expr) = Just $ Closure is expr ctx
-eval ctx (Apply f xs) = 
-  mapM (eval ctx) xs >>= \mxs -> 
-  eval ctx f >>= \f' ->
+eval ctx (Apply f xs) = do
+  mxs <- mapM (eval ctx) xs
+  f'  <- eval ctx f
   apply f' mxs
