@@ -17,6 +17,7 @@ data Expr = Var Ident
           | Plus Expr Expr
           | Minus Expr Expr
           | If Expr Expr Expr
+          | Cond [Expr]
           | Lambda [Ident] Expr
           | Apply Expr [Expr]
           deriving (Show)
@@ -129,6 +130,13 @@ sepBy px psep =
     pure x
     <|> px
 
+parseExpr :: Parser Expr
+parseExpr  =  parseVar
+          <|> parseInt
+          <|> parseIf
+          <|> parseCond
+          <|> parseList
+
 parseVar :: Parser Expr
 parseVar = do
   first <- letter <|> symbol
@@ -140,6 +148,36 @@ parseInt = do
   n <- int
   pure $ Val n
 
+parseIf :: Parser Expr
+parseIf = do
+  char '('
+  string "if"
+  spaces
+  cex <- parseExpr
+  spaces
+  tex <- parseExpr
+  spaces
+  eex <- parseExpr
+  spaces
+  char ')'
+  pure $ If cex tex eex
+
+parseCond :: Parser Expr
+parseCond = do
+  char '('
+  string "cond"
+  spaces
+  cexs <- sepBy (parseExpr) spaces
+  char ')'
+  pure $ Cond cexs
+
+parseList :: Parser Expr
+parseList = do
+  char '('
+  xs <- sepBy (parseExpr) spaces
+  char ')'
+  pure $ List xs
+
 lookup :: String -> Context -> Maybe Value 
 lookup _ [] = Nothing
 lookup x ((k, v) : r) 
@@ -147,7 +185,7 @@ lookup x ((k, v) : r)
   | otherwise = lookup x r
 
 apply :: Value -> [Value] -> Maybe Value
-apply (Closure is expr ctx) xs = eval (zip is xs ++ ctx) expr
+apply (Closure ids expr ctx) xs = eval (zip ids xs ++ ctx) expr
 apply _ _ = Nothing
 
 plus :: Value -> Value -> Maybe Value
@@ -182,15 +220,23 @@ eval ctx (If cex tex eex) = do
   tex' <- eval ctx tex
   eex' <- eval ctx eex
   ifcond cex' tex' eex'
-eval ctx (Lambda is expr) = Just $ Closure is expr ctx
+eval _   (Cond []) = Nothing
+eval ctx (Cond [List [(Var "else"), tex]]) = eval ctx tex
+eval ctx (Cond (List [cex, tex] : rest)) = do
+   cex' <- eval ctx cex
+   case cex' of
+     Number 0 -> eval ctx tex
+     _        -> eval ctx (Cond rest)
+eval _   (Cond _) = Nothing
+eval ctx (Lambda ids expr) = Just $ Closure ids expr ctx
 eval ctx (Apply f xs) = do
   xs' <- mapM (eval ctx) xs
   f'  <- eval ctx f
   apply f' xs'
 
-showVal :: Value -> String
-showVal (Number n) = show n
-showVal (ListVal xs) = "(" ++ (unwords $ map showVal xs) ++ ")"
-showVal (Closure is _ _) = "(lambda (" ++ (unwords is) ++ ") ...)"
+showValue :: Value -> String
+showValue (Number n) = show n
+showValue (ListVal xs) = "(" ++ (unwords $ map showValue xs) ++ ")"
+showValue (Closure ids _ _) = "(lambda (" ++ (unwords ids) ++ ") ...)"
 
-instance Show Value where show = showVal
+instance Show Value where show = showValue
