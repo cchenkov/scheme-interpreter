@@ -12,6 +12,8 @@ library
   exposed-modules:
       Lib
   other-modules:
+      Eval
+      Parser
       Paths_project
   hs-source-dirs:
       src
