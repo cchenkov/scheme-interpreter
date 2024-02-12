@@ -2,57 +2,72 @@ module Primitives where
 
 import Types
 
-add :: Expr -> Expr -> Expr
-add (Number x) (Number y) = Number (x + y)
-add _          _          = undefined
+env :: Context
+env = [("+",         Primitive add),
+       ("-",         Primitive sub),
+       ("*",         Primitive mult),
+       ("/",         Primitive divide),
+       ("mod",       Primitive modulo),
+       ("quotient",  Primitive quotient),
+       ("remainder", Primitive remainder),
+       ("=",         Primitive equal),
+       ("<",         Primitive lessThan),
+       (">",         Primitive greaterThan),
+       ("/=",        Primitive notEqual),
+       ("<=",        Primitive lessThanOrEqual),
+       (">=",        Primitive greaterThanOrEqual)]
 
-sub :: Expr -> Expr -> Expr
-sub (Number x) (Number y) = Number (x - y)
-sub _          _          = undefined
+add :: [Expr] -> Maybe Expr
+add [Number x, Number y] = Just $ Number (x + y)
+add _                    = Nothing
 
-mult :: Expr -> Expr -> Expr
-mult (Number x) (Number y) = Number (x * y)
-mult _          _          = undefined
+sub :: [Expr] -> Maybe Expr
+sub [Number x, Number y] = Just $ Number (x - y)
+sub _                    = Nothing
 
-divide :: Expr -> Expr -> Expr
-divide (Number x) (Number y) = Number (x `div` y)
-divide _          _          = undefined
+mult :: [Expr] -> Maybe Expr
+mult [Number x, Number y] = Just $ Number (x * y)
+mult _                    = Nothing
 
-modulo :: Expr -> Expr -> Expr
-modulo (Number x) (Number y) = Number (x `mod` y)
-modulo _          _          = undefined
+divide :: [Expr] -> Maybe Expr
+divide [Number x, Number y] = Just $ Number (x `div` y)
+divide _                    = Nothing
 
-quotient :: Expr -> Expr -> Expr
-quotient (Number x) (Number y) = Number (x `quot` y)
-quotient _          _          = undefined
+modulo :: [Expr] -> Maybe Expr
+modulo [Number x, Number y] = Just $ Number (x `mod` y)
+modulo _                    = Nothing
 
-remainder :: Expr -> Expr -> Expr
-remainder (Number x) (Number y) = Number (x `rem` y)
-remainder _          _          = undefined
+quotient :: [Expr] -> Maybe Expr
+quotient [Number x, Number y] = Just $ Number (x `quot` y)
+quotient _                    = Nothing
 
-equal :: Expr -> Expr -> Expr
-equal (Number x) (Number y) = Bool (x == y)
-equal _          _          = undefined
+remainder :: [Expr] -> Maybe Expr
+remainder [Number x, Number y] = Just $ Number (x `rem` y)
+remainder _                    = Nothing
 
-lessThan :: Expr -> Expr -> Expr
-lessThan (Number x) (Number y) = Bool (x < y)
-lessThan _          _          = undefined
+equal :: [Expr] -> Maybe Expr
+equal [Number x, Number y] = Just $ Bool (x == y)
+equal _                    = Nothing
 
-greaterThan :: Expr -> Expr -> Expr
-greaterThan (Number x) (Number y) = Bool (x > y)
-greaterThan _          _          = undefined
+lessThan :: [Expr] -> Maybe Expr
+lessThan [Number x, Number y] = Just $ Bool (x < y)
+lessThan _                    = Nothing
 
-notEqual :: Expr -> Expr -> Expr
-notEqual (Number x) (Number y) = Bool (x /= y)
-notEqual _          _          = undefined
+greaterThan :: [Expr] -> Maybe Expr
+greaterThan [Number x, Number y] = Just $ Bool (x > y)
+greaterThan _                    = Nothing
 
-lessThanOrEqual :: Expr -> Expr -> Expr
-lessThanOrEqual (Number x) (Number y) = Bool (x <= y)
-lessThanOrEqual _          _          = undefined
+notEqual :: [Expr] -> Maybe Expr
+notEqual [Number x, Number y] = Just $ Bool (x /= y)
+notEqual _                    = Nothing
 
-greaterThanOrEqual :: Expr -> Expr -> Expr
-greaterThanOrEqual (Number x) (Number y) = Bool (x >= y)
-greaterThanOrEqual _          _          = undefined
+lessThanOrEqual :: [Expr] -> Maybe Expr
+lessThanOrEqual [Number x, Number y] = Just $ Bool (x <= y)
+lessThanOrEqual _                    = Nothing
+
+greaterThanOrEqual :: [Expr] -> Maybe Expr
+greaterThanOrEqual [Number x, Number y] = Just $ Bool (x >= y)
+greaterThanOrEqual _                    = Nothing
 
 car :: Expr -> Expr
 car (List (x : _)) = x

@@ -28,92 +28,6 @@ eval val@(Bool _) = pure $ Just val
 -- variable
 eval (Var i) = lookupContext i
 
--- add
-eval (List [Var "+", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 add x' y'
-
--- sub
-eval (List [Var "-", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 sub x' y'
-
--- mult
-eval (List [Var "*", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 mult x' y'
-
--- divide
-eval (List [Var "/", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 divide x' y'
-
--- modulo
-eval (List [Var "mod", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 modulo x' y'
-
--- quotient
-eval (List [Var "quotient", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 quotient x' y'
-
--- remainder
-eval (List [Var "remainder", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 remainder x' y'
-
--- equal
-eval (List [Var "=", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 equal x' y'
-
--- lessThan
-eval (List [Var "<", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 lessThan x' y'
-
--- greaterThan
-eval (List [Var ">", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 greaterThan x' y'
-
--- notEqual
-eval (List [Var "/=", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 notEqual x' y'
-
--- lessThanOrEqual
-eval (List [Var "<=", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 lessThanOrEqual x' y'
-
--- greaterThanOrEqual
-eval (List [Var ">=", x, y]) = do
-  x' <- eval x
-  y' <- eval y
-  pure $ liftA2 greaterThanOrEqual x' y'
-
--- -- car
--- eval (List [Var "car", List xs]) =
---   pure $ Just $ car $ List $ xs
-
--- -- cdr
--- eval (List [Var "cdr", List xs]) =
---   pure $ Just $ cdr $ List $ xs
-
 -- if
 eval (List [Var "if", cex, tex, eex]) = do
   cex' <- eval cex
@@ -138,11 +52,13 @@ eval (List (func : args)) = do
   args' <- mapM eval args
   func' <- eval func
   case func' of
-    Just (Func ids expr) -> do
+    Just (Func ids expr)  -> do
       mapM_ extendContext (zip ids (catMaybes args'))
       eval expr
-    _                    -> pure Nothing
+    Just (Primitive prim) -> pure $ prim (catMaybes args')
+    _                     -> pure Nothing
 
 -- discard
-eval func@(Func _ _) = pure $ Just func
-eval list@(List _)   = pure $ Just list
+eval prim@(Primitive _) = pure $ Just prim
+eval func@(Func _ _)    = pure $ Just func
+eval list@(List _)      = pure $ Just list
