@@ -1,5 +1,9 @@
 module Eval where
 
+import Control.Monad.State
+import Control.Applicative (liftA2)
+import Data.Maybe
+
 type Ident = String
 
 type Context = [(Ident, Expr)]
@@ -8,76 +12,79 @@ data Expr = Var Ident
           | Number Integer
           | Bool Bool
           | List [Expr]
-          | Func [Ident] Expr Context
+          | Func [Ident] Expr
 
-apply :: Expr -> [Expr] -> Maybe Expr
-apply (Func ids expr ctx) args = eval (zip ids args ++ ctx) expr
-apply _ _ = Nothing
+plus :: Expr -> Expr -> Expr
+plus (Number x) (Number y) = Number (x + y)
+plus _ _ = undefined
 
-plus :: Expr -> Expr -> Maybe Expr
-plus (Number x) (Number y) = Just $ Number (x + y)
-plus _ _ = Nothing
+minus :: Expr -> Expr -> Expr
+minus (Number x) (Number y) = Number (x - y)
+minus _ _ = undefined
 
-minus :: Expr -> Expr -> Maybe Expr
-minus (Number x) (Number y) = Just $ Number (x - y)
-minus _ _ = Nothing
+extendContext :: (Ident, Expr) -> State Context ()
+extendContext pair = do
+  ctx <- get
+  put (pair : ctx)
+  pure ()
 
-eval :: Context -> Expr -> Maybe Expr
+eval :: Expr -> State Context (Maybe Expr)
 
 -- number
-eval _ val@(Number _) = Just val
+eval val@(Number _) = pure $ Just val
 
 -- bool
-eval _ val@(Bool _) = Just val
+eval val@(Bool _) = pure $ Just val
 
 -- variable
-eval ctx (Var i) = lookup i ctx
+eval (Var i) = do
+  ctx <- get
+  pure $ lookup i ctx
 
 -- plus
-eval ctx (List [Var "+", x, y]) = do
-  x' <- eval ctx x
-  y' <- eval ctx y
-  plus x' y'
+eval (List [Var "+", x, y]) = do
+  x'  <- eval x
+  y'  <- eval y
+  pure $ liftA2 plus x' y'
 
 -- minus
-eval ctx (List [Var "-", x, y]) = do
-  x' <- eval ctx x
-  y' <- eval ctx y
-  minus x' y'
+eval (List [Var "-", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 minus x' y'
 
 -- if
-eval ctx (List [Var "if", cex, tex, eex]) = do
-  cex' <- eval ctx cex
+eval (List [Var "if", cex, tex, eex]) = do
+  cex' <- eval cex
   case cex' of
-    Bool True -> eval ctx tex
-    _         -> eval ctx eex
+    Just (Bool True) -> eval tex
+    _                -> eval eex
 
 -- cond
-eval ctx (List [Var "cond",  List [Var "else", tex]]) = eval ctx tex
-eval ctx (List (Var "cond" : List [cex, tex] : rest)) = do
-   cex' <- eval ctx cex
+eval (List [Var "cond",  List [Var "else", eex]]) = eval eex
+eval (List (Var "cond" : List [cex, tex] : rest)) = do
+   cex' <- eval cex
    case cex' of
-     Bool True -> eval ctx tex
-     _         -> eval ctx (List (Var "cond" : rest))
+     Just (Bool True) -> eval tex
+     _                -> eval (List (Var "cond" : rest))
 
 -- lambda
-eval ctx (List (Var "lambda" : List ids : exprs)) =
-  Just $ Func (map showExpr ids) (last exprs) ctx
+eval (List (Var "lambda" : List ids : exprs)) = do
+  pure $ Just $ Func (map showExpr ids) (last exprs)
 
 -- func
-eval ctx (List (func : args)) = do
-  args' <- mapM (eval ctx) args
-  func' <- eval ctx func
-  apply func' args'
+eval (List (func : args)) = do
+  args' <- mapM (eval) args
+  func' <- eval func
+  case func' of
+    Just (Func ids expr) -> do
+      mapM extendContext (zip ids (catMaybes args'))
+      eval expr
+    _                    -> pure Nothing
 
 -- discard
-eval _ func@(Func _ _ _) = Just func
-
--- list
--- eval ctx (List xs) = do
---   xs' <- mapM (eval ctx) xs
---   Just $ ListVal xs'
-eval _ (List _) = Nothing
+eval func@(Func _ _) = pure $ Just func
+eval list@(List _)   = pure $ Just list
 
 showExpr :: Expr -> String
 showExpr (Var i) = i
@@ -85,6 +92,6 @@ showExpr (Number n) = show n
 showExpr (Bool True) = "#t"
 showExpr (Bool False) = "#f"
 showExpr (List xs) = "(" ++ unwords (map showExpr xs) ++ ")"
-showExpr (Func ids expr _) = "(lambda (" ++ unwords ids ++ ") " ++ showExpr expr ++ ")"
+showExpr (Func ids expr) = "(lambda (" ++ unwords ids ++ ") " ++ showExpr expr ++ ")"
 
 instance Show Expr where show = showExpr
