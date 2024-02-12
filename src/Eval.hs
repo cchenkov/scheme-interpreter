@@ -6,6 +6,11 @@ import Control.Monad.State
 import Control.Applicative (liftA2)
 import Data.Maybe
 
+lookupContext :: Ident -> State Context (Maybe Expr)
+lookupContext i = do
+  ctx <- get
+  pure $ lookup i ctx
+
 extendContext :: (Ident, Expr) -> State Context ()
 extendContext pair = do
   ctx <- get
@@ -21,9 +26,7 @@ eval val@(Number _) = pure $ Just val
 eval val@(Bool _) = pure $ Just val
 
 -- variable
-eval (Var i) = do
-  ctx <- get
-  pure $ lookup i ctx
+eval (Var i) = lookupContext i
 
 -- add
 eval (List [Var "+", x, y]) = do
@@ -132,11 +135,11 @@ eval (List (Var "lambda" : List ids : exprs)) = do
 
 -- func
 eval (List (func : args)) = do
-  args' <- mapM (eval) args
+  args' <- mapM eval args
   func' <- eval func
   case func' of
     Just (Func ids expr) -> do
-      mapM extendContext (zip ids (catMaybes args'))
+      mapM_ extendContext (zip ids (catMaybes args'))
       eval expr
     _                    -> pure Nothing
 
