@@ -47,7 +47,7 @@ eval (List (Var "cond" : List [cex, tex] : rest)) = do
 eval (List (Var "lambda" : List ids : exprs)) = do
   pure $ Just $ Func (map showExpr ids) (last exprs)
 
--- func
+-- func | primitive
 eval (List (func : args)) = do
   args' <- mapM eval args
   func' <- eval func
