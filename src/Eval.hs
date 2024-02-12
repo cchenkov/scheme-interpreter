@@ -43,6 +43,20 @@ eval (List (Var "cond" : List [cex, tex] : rest)) = do
      Just (Bool True) -> eval tex
      _                -> eval (List (Var "cond" : rest))
 
+-- define
+eval (List [Var "define", Var i, expr]) = do
+  val <- eval expr
+  case val of
+    Just val' -> do
+      extendContext (i, val')
+      pure val
+    _         -> pure Nothing
+
+eval (List (Var "define" : List (Var i : ids) : exprs)) = do
+  let func = Func (map showExpr ids) (last exprs)
+  extendContext (i, func)
+  pure $ Just $ func
+
 -- lambda
 eval (List (Var "lambda" : List ids : exprs)) = do
   pure $ Just $ Func (map showExpr ids) (last exprs)
