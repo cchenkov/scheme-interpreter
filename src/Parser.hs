@@ -1,6 +1,6 @@
 module Parser where
 
-import Eval
+import Types
 import Control.Applicative (Alternative, empty, (<|>), many, some)
 
 newtype Parser a = Parser { runParser :: String -> Maybe (a, String) }

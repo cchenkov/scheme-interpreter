@@ -1,26 +1,10 @@
 module Eval where
 
+import Types
+import Primitives
 import Control.Monad.State
 import Control.Applicative (liftA2)
 import Data.Maybe
-
-type Ident = String
-
-type Context = [(Ident, Expr)]
-
-data Expr = Var Ident
-          | Number Integer
-          | Bool Bool
-          | List [Expr]
-          | Func [Ident] Expr
-
-plus :: Expr -> Expr -> Expr
-plus (Number x) (Number y) = Number (x + y)
-plus _ _ = undefined
-
-minus :: Expr -> Expr -> Expr
-minus (Number x) (Number y) = Number (x - y)
-minus _ _ = undefined
 
 extendContext :: (Ident, Expr) -> State Context ()
 extendContext pair = do
@@ -41,17 +25,91 @@ eval (Var i) = do
   ctx <- get
   pure $ lookup i ctx
 
--- plus
+-- add
 eval (List [Var "+", x, y]) = do
-  x'  <- eval x
-  y'  <- eval y
-  pure $ liftA2 plus x' y'
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 add x' y'
 
--- minus
+-- sub
 eval (List [Var "-", x, y]) = do
   x' <- eval x
   y' <- eval y
-  pure $ liftA2 minus x' y'
+  pure $ liftA2 sub x' y'
+
+-- mult
+eval (List [Var "*", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 mult x' y'
+
+-- divide
+eval (List [Var "/", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 divide x' y'
+
+-- modulo
+eval (List [Var "mod", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 modulo x' y'
+
+-- quotient
+eval (List [Var "quotient", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 quotient x' y'
+
+-- remainder
+eval (List [Var "remainder", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 remainder x' y'
+
+-- equal
+eval (List [Var "=", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 equal x' y'
+
+-- lessThan
+eval (List [Var "<", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 lessThan x' y'
+
+-- greaterThan
+eval (List [Var ">", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 greaterThan x' y'
+
+-- notEqual
+eval (List [Var "/=", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 notEqual x' y'
+
+-- lessThanOrEqual
+eval (List [Var "<=", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 lessThanOrEqual x' y'
+
+-- greaterThanOrEqual
+eval (List [Var ">=", x, y]) = do
+  x' <- eval x
+  y' <- eval y
+  pure $ liftA2 greaterThanOrEqual x' y'
+
+-- -- car
+-- eval (List [Var "car", List xs]) =
+--   pure $ Just $ car $ List $ xs
+
+-- -- cdr
+-- eval (List [Var "cdr", List xs]) =
+--   pure $ Just $ cdr $ List $ xs
 
 -- if
 eval (List [Var "if", cex, tex, eex]) = do
@@ -85,13 +143,3 @@ eval (List (func : args)) = do
 -- discard
 eval func@(Func _ _) = pure $ Just func
 eval list@(List _)   = pure $ Just list
-
-showExpr :: Expr -> String
-showExpr (Var i) = i
-showExpr (Number n) = show n
-showExpr (Bool True) = "#t"
-showExpr (Bool False) = "#f"
-showExpr (List xs) = "(" ++ unwords (map showExpr xs) ++ ")"
-showExpr (Func ids expr) = "(lambda (" ++ unwords ids ++ ") " ++ showExpr expr ++ ")"
-
-instance Show Expr where show = showExpr

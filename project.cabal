@@ -12,8 +12,10 @@ library
   exposed-modules:
       Lib
   other-modules:
+      Types
       Eval
       Parser
+      Primitives
       Paths_project
   hs-source-dirs:
       src
