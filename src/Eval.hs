@@ -51,14 +51,17 @@ eval (List (Var "lambda" : List ids : exprs)) = do
 eval (List (func : args)) = do
   args' <- mapM eval args
   func' <- eval func
-  case func' of
-    Just (Func ids expr)  -> do
-      mapM_ extendContext (zip ids (catMaybes args'))
-      eval expr
-    Just (Primitive prim) -> pure $ prim (catMaybes args')
-    _                     -> pure Nothing
+  if length args /= length (catMaybes args')
+    then pure Nothing
+      else case func' of
+      Just (Func ids expr)  -> do
+        mapM_ extendContext (zip ids (catMaybes args'))
+        eval expr
+      Just (Primitive prim) -> pure $ prim (catMaybes args')
+      Just x                -> pure $ Just $ List (x : catMaybes args')
+      _                     -> pure Nothing
 
 -- discard
-eval prim@(Primitive _) = pure $ Just prim
-eval func@(Func _ _)    = pure $ Just func
-eval list@(List _)      = pure $ Just list
+eval primexpr@(Primitive _) = pure $ Just primexpr
+eval funcexpr@(Func _ _)    = pure $ Just funcexpr
+eval listexpr@(List _)      = pure $ Just listexpr

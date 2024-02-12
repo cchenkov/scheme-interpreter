@@ -12,12 +12,12 @@ data Expr = Var Ident
           | Primitive ([Expr] -> Maybe Expr)
 
 showExpr :: Expr -> String
-showExpr (Var i) = i
-showExpr (Number n) = show n
-showExpr (Bool True) = "#t"
-showExpr (Bool False) = "#f"
-showExpr (List xs) = "(" ++ unwords (map showExpr xs) ++ ")"
+showExpr (Var i)         = i
+showExpr (Number n)      = show n
+showExpr (Bool True)     = "#t"
+showExpr (Bool False)    = "#f"
+showExpr (List xs)       = "(" ++ unwords (map showExpr xs) ++ ")"
 showExpr (Func ids expr) = "(lambda (" ++ unwords ids ++ ") " ++ showExpr expr ++ ")"
-showExpr (Primitive _) = "<primitive>"
+showExpr (Primitive _)   = "<primitive>"
 
 instance Show Expr where show = showExpr
