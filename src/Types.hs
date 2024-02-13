@@ -5,6 +5,7 @@ type Ident = String
 type Context = [(Ident, Expr)]
 
 data Expr = Var Ident
+          | String String
           | Number Integer
           | Bool Bool
           | List [Expr]
@@ -13,6 +14,7 @@ data Expr = Var Ident
 
 showExpr :: Expr -> String
 showExpr (Var i)         = i
+showExpr (String s)      = s
 showExpr (Number n)      = show n
 showExpr (Bool True)     = "#t"
 showExpr (Bool False)    = "#f"

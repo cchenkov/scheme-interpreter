@@ -6,7 +6,7 @@ import Primitives
 import Types
 import Control.Monad.State
 
-parseAndEval :: String -> State Context (Maybe Expr)
+parseAndEval :: String -> Stateful IO (Maybe Expr)
 parseAndEval input = do
   let expr = parse input
   case expr of

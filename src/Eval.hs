@@ -6,18 +6,23 @@ import Control.Monad.State
 import Control.Applicative (liftA2)
 import Data.Maybe
 
-lookupContext :: Ident -> State Context (Maybe Expr)
+type Stateful = StateT Context
+
+lookupContext :: Ident -> Stateful IO (Maybe Expr)
 lookupContext i = do
   ctx <- get
   pure $ lookup i ctx
 
-extendContext :: (Ident, Expr) -> State Context ()
+extendContext :: (Ident, Expr) -> Stateful IO ()
 extendContext pair = do
   ctx <- get
   put (pair : ctx)
   pure ()
 
-eval :: Expr -> State Context (Maybe Expr)
+eval :: Expr -> Stateful IO (Maybe Expr)
+
+-- string
+eval val@(String _) = pure $ Just val
 
 -- number
 eval val@(Number _) = pure $ Just val
