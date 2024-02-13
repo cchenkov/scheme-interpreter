@@ -1,6 +1,14 @@
 module Lib where
 
-import Types
 import Eval
 import Parser
 import Primitives
+import Types
+import Control.Monad.State
+
+parseAndEval :: String -> State Context (Maybe Expr)
+parseAndEval input = do
+  let expr = parse input
+  case expr of
+    Just expr' -> eval expr'
+    _          -> pure Nothing

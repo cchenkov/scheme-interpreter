@@ -24,13 +24,13 @@ env = [("=",         Primitive $ boolOp (==)),
 numericOp :: (Integer -> Integer -> Integer) -> [Expr] -> Maybe Expr
 numericOp _  [] = Nothing
 numericOp op xs =
-    let numbers = [x | Number x <- xs] in
-    if length xs /= length numbers
-        then Nothing
-        else case numbers of
-            []       -> Nothing
-            [x']     -> Just $ Number x'
-            (x':xs') -> Just $ Number $ foldl op x' xs'
+  let numbers = [x | Number x <- xs] in
+  if length xs /= length numbers
+    then Nothing
+    else case numbers of
+      []       -> Nothing
+      [x']     -> Just $ Number x'
+      (x':xs') -> Just $ Number $ foldl op x' xs'
 
 binaryNumericOp :: (Integer -> Integer -> Integer) -> [Expr] -> Maybe Expr
 binaryNumericOp op [Number x, Number y] = Just $ Number $ op x y
@@ -39,13 +39,13 @@ binaryNumericOp _  _                    = Nothing
 boolOp :: (Integer -> Integer -> Bool) -> [Expr] -> Maybe Expr
 boolOp _  [] = Nothing
 boolOp op xs =
-    let numbers = [x | Number x <- xs] in
-    if length xs /= length numbers
-        then Nothing
-        else case numbers of
-            []       -> Nothing
-            [_]      -> Just $ Bool True
-            (x':xs') -> Just $ Bool $ all (x' `op`) xs'
+  let numbers = [x | Number x <- xs] in
+  if length xs /= length numbers
+    then Nothing
+    else case numbers of
+      []       -> Nothing
+      [_]      -> Just $ Bool True
+      (x':xs') -> Just $ Bool $ all (x' `op`) xs'
 
 car :: [Expr] -> Maybe Expr
 car [List (x : _)] = Just x

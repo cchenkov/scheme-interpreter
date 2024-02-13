@@ -145,3 +145,9 @@ parseList = do
   xs <- sepBy parseExpr spaces
   char ')'
   pure $ List xs
+
+parse :: String -> Maybe Expr
+parse input =
+  case runParser parseExpr input of
+    Just (expr, _) -> Just expr
+    _              -> Nothing

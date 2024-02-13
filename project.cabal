@@ -11,11 +11,11 @@ build-type:     Simple
 library
   exposed-modules:
       Lib
-  other-modules:
       Types
       Eval
       Parser
       Primitives
+  other-modules:
       Paths_project
   hs-source-dirs:
       src
@@ -25,7 +25,7 @@ library
       , mtl
   default-language: Haskell2010
 
-executable huffman-coding 
+executable scheme-interpreter
   main-is: Main.hs
   other-modules:
       Paths_project
@@ -34,5 +34,6 @@ executable huffman-coding
   ghc-options: -Werror -Wincomplete-patterns -Wunused-binds -Wunused-matches -Wmissing-signatures -Wname-shadowing -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , mtl
     , project
   default-language: Haskell2010
