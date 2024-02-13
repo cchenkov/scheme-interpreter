@@ -8,6 +8,7 @@ import Types
 import Control.Monad.State
 import Data.Maybe
 import System.IO
+import System.Exit
 
 exec :: String -> Stateful IO ()
 exec input =
@@ -23,4 +24,6 @@ main = do
   where
     run = do
       lift $ putStr "> " >> hFlush stdout
-      lift getLine >>= exec
+      input <- lift getLine
+      when (input == "(exit)") $ lift exitSuccess
+      exec input
