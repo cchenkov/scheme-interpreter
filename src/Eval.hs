@@ -60,7 +60,7 @@ eval (List [Var "define", Var i, expr]) = do
 eval (List (Var "define" : List (Var i : ids) : exprs)) = do
   let func = Func (map showExpr ids) (last exprs)
   extendContext (i, func)
-  pure $ Just $ func
+  pure $ Just func
 
 -- lambda
 eval (List (Var "lambda" : List ids : exprs)) = do
@@ -69,15 +69,15 @@ eval (List (Var "lambda" : List ids : exprs)) = do
 -- func | primitive
 eval (List (func : args)) = do
   args' <- mapM eval args
-  func' <- eval func
-  if length args /= length (catMaybes args')
+  func' <- eval funcexpr
+  let justArgs = catMaybes args'
+  if length args /= length justArgs
     then pure Nothing
       else case func' of
       Just (Func ids expr)  -> do
-        mapM_ extendContext (zip ids (catMaybes args'))
+        mapM_ extendContext (zip ids justArgs)
         eval expr
-      Just (Primitive prim) -> pure $ prim (catMaybes args')
-      Just x                -> pure $ Just $ List (x : catMaybes args')
+      Just (Primitive prim) -> pure $ prim justArgs
       _                     -> pure Nothing
 
 -- discard

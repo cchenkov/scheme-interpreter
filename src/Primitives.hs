@@ -12,10 +12,10 @@ env = [("=",         Primitive $ boolOp (==)),
        ("+",         Primitive $ numericOp (+)),
        ("-",         Primitive $ numericOp (-)),
        ("*",         Primitive $ numericOp (*)),
-       ("/",         Primitive $ numericOp (div)),
-       ("modulo",    Primitive $ binaryNumericOp (mod)),
-       ("quotient",  Primitive $ binaryNumericOp (quot)),
-       ("remainder", Primitive $ binaryNumericOp (rem)),
+       ("/",         Primitive $ numericOp div),
+       ("modulo",    Primitive $ binaryNumericOp mod),
+       ("quotient",  Primitive $ binaryNumericOp quot),
+       ("remainder", Primitive $ binaryNumericOp rem),
        ("car",       Primitive car),
        ("cdr",       Primitive cdr),
        ("cons",      Primitive cons),
@@ -57,7 +57,7 @@ cdr _               = Nothing
 
 cons :: [Expr] -> Maybe Expr
 cons [x, List []] = Just $ List [x]
-cons [x, List xs] = Just $ List $ (x:xs)
+cons [x, List xs] = Just $ List (x:xs)
 cons _            = Nothing
 
 list :: [Expr] -> Maybe Expr
