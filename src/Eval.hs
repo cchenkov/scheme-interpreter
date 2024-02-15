@@ -69,7 +69,7 @@ eval (List (Var "lambda" : List ids : exprs)) = do
 -- func | primitive
 eval (List (func : args)) = do
   args' <- mapM eval args
-  func' <- eval funcexpr
+  func' <- eval func
   let justArgs = catMaybes args'
   if length args /= length justArgs
     then pure Nothing
